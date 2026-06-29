@@ -44,11 +44,12 @@ namespace BPEditor
         {
             main = this;
             modFolder = new FolderPath(ModFolder);
-            Config.Setup();
+            Config.InitSettings();
         }
 
         public override void Load()
         {
+            Config.RegisterMenu();
             var harmony = new Harmony("com.bpeditor");
             harmony.PatchAll(typeof(Main).Assembly);
             var blockPrefix = new HarmonyMethod(typeof(Main), nameof(BlockWhileTyping));
@@ -88,11 +89,16 @@ namespace BPEditor
         protected override FilePath SettingsFile => Main.modFolder.ExtendToFile("BPEditor.Config.txt");
         protected override void RegisterOnVariableChange(Action onChange) => Application.quitting += onChange;
 
-        /** <summary>Registers settings and adds the config menu entry.</summary> */
-        public static void Setup()
+        /** <summary>Initialises the settings object; safe to call in Early_Load.</summary> */
+        public static void InitSettings()
         {
             main = new Config();
             main.Initialize();
+        }
+
+        /** <summary>Registers the config menu entry; must be called in Load after UITools is ready.</summary> */
+        public static void RegisterMenu()
+        {
             ConfigurationMenu.Add("BP Editor", new (string, Func<Transform, GameObject>)[]
             {
                 ("Settings", t => BuildMenu(t, ConfigurationMenu.ContentSize))
