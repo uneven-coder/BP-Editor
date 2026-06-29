@@ -27,7 +27,7 @@ namespace BPEditor
         public override string DisplayName => "BP Editor";
         public override string Author => "Cratior";
         public override string MinimumGameVersionNecessary => "1.6.00.16";
-        public override string ModVersion => "0.9.1";
+        public override string ModVersion => "0.9.2";
         public override string Description => "Improved part editor with visual handles, multi-select, and rich property controls.";
 
         public Dictionary<string, FilePath> UpdatableFiles => new Dictionary<string, FilePath>
