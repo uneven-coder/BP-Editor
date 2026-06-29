@@ -153,6 +153,7 @@ namespace BPEditor
             NumRow(box, w, sld, inp, "Blue", () => S.OutlineB, v => S.OutlineB = Mathf.Clamp01(v), 0f, 1f, previewImg);
             Builder.CreateSeparator(box, w - 20, 0, 0);
             NumRow(box, w, sld, inp, "Box Line Width", () => S.BBoxLineWidth, v => S.BBoxLineWidth = Mathf.Max(0.001f, v), 0.001f, 0.1f);
+            NumRow(box, w, sld, inp, "Min Bounds Size", () => S.MinBoundsDisplay, v => S.MinBoundsDisplay = Mathf.Max(0f, v), 0f, 2f);
             return box.gameObject;
         }
 
@@ -203,6 +204,7 @@ namespace BPEditor
             public float OutlineG = 1f;
             public float OutlineB = 1f;
             public float BBoxLineWidth = 0.013f;
+            public float MinBoundsDisplay = 0.70f;
             public bool CtrlIsToggle = false;
             public bool AltIsToggle = false;
         }

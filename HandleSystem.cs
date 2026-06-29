@@ -109,13 +109,26 @@ namespace BPEditor
             return (hw, hw * aspect, vc);
         }
 
+        static (float hw, float hh, Vector2 vc) GetDisplayExtents(Part p)
+        {
+            var (hw, hh, vc) = GetLocalExtents(p);
+            float min = Config.S.MinBoundsDisplay * 0.5f;
+            return (Mathf.Max(hw, min), Mathf.Max(hh, min), vc);
+        }
+
+        static Bounds DisplayBounds(Bounds b)
+        {
+            float min = Config.S.MinBoundsDisplay;
+            return new Bounds(b.center, new Vector3(Mathf.Max(b.size.x, min), Mathf.Max(b.size.y, min), b.size.z));
+        }
+
         void PopulateHandles()
         {
             handles.Clear();
             if (EditorCore.IsSingle && !Config.S.LockBounds)
             {
                 Part p = EditorCore.SinglePart;
-                var (hw, hh, vc) = GetLocalExtents(p);
+                var (hw, hh, vc) = GetDisplayExtents(p);
                 float θ = p.orientation.orientation.Value.z;
                 AddHandle(HandleType.CornerTL, LW(-hw, hh, vc, θ));
                 AddHandle(HandleType.CornerTR, LW(hw, hh, vc, θ));
@@ -140,9 +153,10 @@ namespace BPEditor
             }
             else
             {
-                float cx = selBounds.center.x, cy = selBounds.center.y;
-                float top = selBounds.max.y, bot = selBounds.min.y;
-                float left = selBounds.min.x, right = selBounds.max.x;
+                var db = DisplayBounds(selBounds);
+                float cx = db.center.x, cy = db.center.y;
+                float top = db.max.y, bot = db.min.y;
+                float left = db.min.x, right = db.max.x;
                 float lSide = left - WidthSideOff;
                 AddHandle(HandleType.CornerTL, new Vector2(left, top));
                 AddHandle(HandleType.CornerTR, new Vector2(right, top));
@@ -156,7 +170,7 @@ namespace BPEditor
                 if (EditorCore.IsSingle)
                 {
                     Part p = EditorCore.SinglePart;
-                    var (hw, hh, vc) = GetLocalExtents(p);
+                    var (hw, hh, vc) = GetDisplayExtents(p);
                     float θ = p.orientation.orientation.Value.z;
                     bool hasH = HasVar("height", "h");
                     bool hasWA = HasVar("width_top", "width_a", "width_original_a");
@@ -241,18 +255,18 @@ namespace BPEditor
                 Orientation o = p.orientation.orientation.Value;
                 snapOriX = o.x; snapOriY = o.y; snapOriZ = o.z;
                 snapPartPos = p.Position;
-                var (hw, hh, vc) = GetLocalExtents(p);
+                var (rhw, rhh, vc) = GetLocalExtents(p);
                 snapVarValue = GetVarValue(p, PrimaryVarNames(handle.type));
                 if (Mathf.Approximately(snapVarValue, 0f) && !isCorner && !isEdge && handle.type != HandleType.Rotate)
-                    snapVarValue = handle.type == HandleType.Height ? hh * 2f : hw;
+                    snapVarValue = handle.type == HandleType.Height ? rhh * 2f : rhw;
                 if (isCorner)
                 {
                     Vector2 localOpp = dragHandle switch
                     {
-                        HandleType.CornerTR => new Vector2(-hw, -hh),
-                        HandleType.CornerTL => new Vector2(hw, -hh),
-                        HandleType.CornerBR => new Vector2(-hw, hh),
-                        HandleType.CornerBL => new Vector2(hw, hh),
+                        HandleType.CornerTR => new Vector2(-rhw, -rhh),
+                        HandleType.CornerTL => new Vector2(rhw, -rhh),
+                        HandleType.CornerBR => new Vector2(-rhw, rhh),
+                        HandleType.CornerBL => new Vector2(rhw, rhh),
                         _ => Vector2.zero
                     };
                     snapCenter = snapLockBounds ? OppositeCorner(dragHandle, selBounds) : LW(localOpp.x, localOpp.y, vc, snapOriZ);
@@ -261,9 +275,9 @@ namespace BPEditor
                 {
                     Vector2 localOpp = dragHandle switch
                     {
-                        HandleType.EdgeRight => new Vector2(-hw, 0f),
-                        HandleType.EdgeLeft => new Vector2(hw, 0f),
-                        HandleType.EdgeBottom => new Vector2(0f, hh),
+                        HandleType.EdgeRight => new Vector2(-rhw, 0f),
+                        HandleType.EdgeLeft => new Vector2(rhw, 0f),
+                        HandleType.EdgeBottom => new Vector2(0f, rhh),
                         _ => Vector2.zero
                     };
                     snapCenter = snapLockBounds ? OppositeEdge(dragHandle, selBounds) : LW(localOpp.x, localOpp.y, vc, snapOriZ);
@@ -393,7 +407,7 @@ namespace BPEditor
             {
                 Part p = EditorCore.SinglePart;
                 if (p == null) return;
-                var (hw, hh, vc) = GetLocalExtents(p);
+                var (hw, hh, vc) = GetDisplayExtents(p);
                 float θ = p.orientation.orientation.Value.z;
                 for (int i = 0; i < handles.Count; i++)
                 {
@@ -422,9 +436,10 @@ namespace BPEditor
             }
             else
             {
-                float cx = selBounds.center.x, cy = selBounds.center.y;
-                float top = selBounds.max.y, bot = selBounds.min.y;
-                float left = selBounds.min.x, right = selBounds.max.x;
+                var db = DisplayBounds(selBounds);
+                float cx = db.center.x, cy = db.center.y;
+                float top = db.max.y, bot = db.min.y;
+                float left = db.min.x, right = db.max.x;
                 float lSide = left - WidthSideOff;
                 float hw2 = 0, hh2 = 0;
                 Vector2 vc2 = default;
@@ -432,7 +447,7 @@ namespace BPEditor
                 if (EditorCore.IsSingle)
                 {
                     Part p2 = EditorCore.SinglePart;
-                    if (p2 != null) { (hw2, hh2, vc2) = GetLocalExtents(p2); θ2 = p2.orientation.orientation.Value.z; }
+                    if (p2 != null) { (hw2, hh2, vc2) = GetDisplayExtents(p2); θ2 = p2.orientation.orientation.Value.z; }
                 }
                 for (int i = 0; i < handles.Count; i++)
                 {
@@ -636,15 +651,17 @@ namespace BPEditor
             if (isSingleOBB)
             {
                 Part p = EditorCore.SinglePart;
-                var (hw, hh, vc) = GetLocalExtents(p);
+                var (rhw, rhh, _) = GetLocalExtents(p);
+                var (dhw, dhh, vc) = GetDisplayExtents(p);
                 float θ = p.orientation.orientation.Value.z;
-                w = hw * 2f; h = hh * 2f;
-                labelPos = LW(0f, -(hh + 0.22f), vc, θ);
+                w = rhw * 2f; h = rhh * 2f;
+                labelPos = LW(0f, -(dhh + 0.22f), vc, θ);
             }
             else
             {
                 w = selBounds.size.x; h = selBounds.size.y;
-                labelPos = new Vector2(selBounds.center.x, selBounds.min.y - 0.22f);
+                var db = DisplayBounds(selBounds);
+                labelPos = new Vector2(db.center.x, db.min.y - 0.22f);
             }
             Vector3 s = Camera.main.WorldToScreenPoint(labelPos);
             if (s.z < 0) return;
@@ -667,7 +684,7 @@ namespace BPEditor
             if (isSingleOBB)
             {
                 Part p = EditorCore.SinglePart;
-                var (hw, hh, vc) = GetLocalExtents(p);
+                var (hw, hh, vc) = GetDisplayExtents(p);
                 float θ = p.orientation.orientation.Value.z;
                 Vector2 TL = LW(-hw, hh, vc, θ), TR = LW(hw, hh, vc, θ);
                 Vector2 BL = LW(-hw, -hh, vc, θ), BR = LW(hw, -hh, vc, θ);
@@ -678,7 +695,8 @@ namespace BPEditor
             }
             else
             {
-                DrawRect(selBounds.min, selBounds.max, colOut, bboxW, depth);
+                var db0 = DisplayBounds(selBounds);
+                DrawRect(db0.min, db0.max, colOut, bboxW, depth);
             }
             if (isDragging && dragHandle == HandleType.Rotate)
             {
@@ -688,17 +706,21 @@ namespace BPEditor
             }
             bool ctrl = Config.IsCtrlActive(), alt = Config.IsAltActive();
             if (ctrl || alt)
-                GLDrawer.DrawCircle(new Vector2(selBounds.max.x + 0.14f, selBounds.max.y + RotateOffset * 0.4f),
+            {
+                var dbi = DisplayBounds(selBounds);
+                GLDrawer.DrawCircle(new Vector2(dbi.max.x + 0.14f, dbi.max.y + RotateOffset * 0.4f),
                     HandleHalf * 0.55f, 8, ctrl ? ColHeight : ColWidth, depth);
+            }
             float drawHW = 0, drawHH = 0;
             Vector2 drawVC = default;
             float drawΘ = 0;
             if (EditorCore.IsSingle)
             {
                 Part p = EditorCore.SinglePart;
-                (drawHW, drawHH, drawVC) = GetLocalExtents(p);
+                (drawHW, drawHH, drawVC) = GetDisplayExtents(p);
                 drawΘ = p.orientation.orientation.Value.z;
             }
+            Bounds dbConn = DisplayBounds(selBounds);
             foreach (Handle h in handles)
             {
                 if (!h.visible) continue;
@@ -708,7 +730,7 @@ namespace BPEditor
                     GLDrawer.DrawCircle(h.worldPos, HandleHalf * 1.4f, 14, col, depth);
                     Vector2 topCenter = isSingleOBB
                         ? LW(0, drawHH, drawVC, drawΘ)
-                        : new Vector2(selBounds.center.x, selBounds.max.y);
+                        : new Vector2(dbConn.center.x, dbConn.max.y);
                     GLDrawer.DrawLine(topCenter, h.worldPos, colOut, bboxW, depth);
                 }
                 else if (h.type == HandleType.ActionFlipH || h.type == HandleType.ActionFlipV ||
@@ -723,7 +745,7 @@ namespace BPEditor
                                  : h.type == HandleType.ActionLockAspect ? -0.30f : -0.60f;
                     Vector2 edgeBase = isSingleOBB
                         ? LW(-drawHW, localY, drawVC, drawΘ)
-                        : new Vector2(selBounds.min.x, h.worldPos.y);
+                        : new Vector2(dbConn.min.x, h.worldPos.y);
                     GLDrawer.DrawLine(edgeBase, h.worldPos, colOut, bboxW, depth);
                 }
                 else if (h.type == HandleType.EdgeBottom || h.type == HandleType.EdgeLeft || h.type == HandleType.EdgeRight)
@@ -738,14 +760,14 @@ namespace BPEditor
                         float localY2 = h.type == HandleType.WidthA ? drawHH * 0.50f : h.type == HandleType.WidthB ? -drawHH * 0.50f : 0f;
                         Vector2 edgeBase = EditorCore.IsSingle
                             ? LW(drawHW, localY2, drawVC, drawΘ)
-                            : new Vector2(selBounds.max.x, h.worldPos.y);
+                            : new Vector2(dbConn.max.x, h.worldPos.y);
                         GLDrawer.DrawLine(edgeBase, h.worldPos, colOut, bboxW, depth);
                     }
                     if (h.type == HandleType.Height)
                     {
                         Vector2 edgeBase = EditorCore.IsSingle
                             ? LW(0, drawHH, drawVC, drawΘ)
-                            : new Vector2(h.worldPos.x, selBounds.max.y);
+                            : new Vector2(h.worldPos.x, dbConn.max.y);
                         GLDrawer.DrawLine(edgeBase, h.worldPos, colOut, bboxW, depth);
                     }
                 }
