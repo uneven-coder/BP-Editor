@@ -2,6 +2,9 @@
 
 A mod for **Spaceflight Simulator** that replaces the vanilla part editor with, visual editing tools. it has interactive handles, align & distribute tools, dimension labels, and property controls.
 
+<img width="665" height="442" alt="image" src="https://github.com/user-attachments/assets/8fe960fd-f8b6-4557-b1f3-2efc1ca02d7b" />
+
+
 ## Features
 
 ### Visual Handles
